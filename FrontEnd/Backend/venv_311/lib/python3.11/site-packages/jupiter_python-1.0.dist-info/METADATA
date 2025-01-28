@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: jupiter-python
+Version: 1.0
+Summary: Fastest way to handle jup.ag swap API
+Author: __token__
+Author-email: volodymyrsup@yandex.ru
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+

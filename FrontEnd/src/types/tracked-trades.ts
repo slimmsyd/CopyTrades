@@ -19,11 +19,28 @@ export interface TrackedTrade {
   trade_type: 'buy' | 'sell';
   closed_reason?: 'manual' | 'stop_loss' | 'take_profit' | 'sold';
   closed_at?: string;
+  initial_token_amount?: number;
   partial_sales?: Array<{
     amount: number;
     price: number;
     date_time: string;
+    transaction_link?: string;
+    profit?: number;
+    profit_percentage?: number;
+    status?: string;
+    result?: string;
   }>;
+}
+
+export interface PartialSale {
+  amount: number;
+  price: number;
+  date_time: string;
+  transaction_link: string;
+  profit: number;
+  profit_percentage: number;
+  status: string;
+  result: string;
 }
 
 export interface TrackedTradesData {

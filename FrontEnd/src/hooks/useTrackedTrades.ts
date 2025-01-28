@@ -9,7 +9,7 @@ export function useTrackedTrades() {
 
   useEffect(() => {
     try {
-      const tradesArray = Object.values(trackedTradesData as TrackedTradesData);
+      const tradesArray = Object.values(trackedTradesData as unknown as TrackedTradesData);
       setTrades(tradesArray);
       setLoading(false);
     } catch (err) {

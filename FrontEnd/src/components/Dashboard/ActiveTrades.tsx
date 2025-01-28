@@ -4,16 +4,17 @@ import { Modal } from '../Modal/Modal';
 import { TradeChart } from './TradeChart';
 import { useTrades } from '../../hooks/useTrades';
 import { useTrackedTrades } from '../../hooks/useTrackedTrades';
-import type { Trade, PartialSale } from '../../types/trades';
-import type { TrackedTrade } from '../../types/tracked-trades';
+import type { Trade } from '../../types/trades';
+import type { TrackedTrade, PartialSale } from '../../types/tracked-trades';
+// ... rest of the file ...
 import TimeAgo from '../Common/TimeAgo';
 
 const ITEMS_PER_PAGE = 5;
 
-const PartialSalesList: React.FC<{ sales: PartialSale[] }> = ({ sales }) => (
+const PartialSalesList: React.FC<{ sales: TrackedTrade['partial_sales'] }> = ({ sales }) => (
   <div className="mt-4 space-y-2">
     <div className="text-sm text-gray-400 font-medium">Partial Sales History</div>
-    {sales.map((sale, index) => (
+    {sales?.map((sale, index) => (
       <div key={index} className="bg-gray-900/30 rounded-lg p-3 text-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="text-gray-400">
@@ -40,10 +41,10 @@ const PartialSalesList: React.FC<{ sales: PartialSale[] }> = ({ sales }) => (
           </div>
           <div>
             <div className="text-gray-400">Profit</div>
-            <div className={`${sale.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {sale.profit >= 0 ? '+' : ''}{sale.profit.toFixed(4)}
+            <div className={`${sale.profit !== undefined && sale.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {sale.profit !== undefined && sale.profit >= 0 ? '+' : ''}{sale.profit?.toFixed(4)}
               <span className="text-xs ml-1">
-                ({sale.profit_percentage.toFixed(2)}%)
+                ({sale.profit_percentage?.toFixed(2)}%)
               </span>
             </div>
           </div>
@@ -92,7 +93,7 @@ export const ActiveTrades: React.FC<{ trackedWallet?: string | null }> = ({ trac
     })
     .slice(startIndex, endIndex);
 
-  const profitableCount = trades.filter(trade => trade.profit > 0).length;
+  const profitableCount = trades.filter(trade => trade.profit !== undefined && trade.profit > 0).length;
 
   return (
     <>
@@ -162,7 +163,7 @@ export const ActiveTrades: React.FC<{ trackedWallet?: string | null }> = ({ trac
               <div 
                 key={trade.id}
                 className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 cursor-pointer"
-                onClick={() => setSelectedTrade(trade)}
+                onClick={() => setSelectedTrade(trade as Trade)}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex items-center justify-between">
@@ -207,9 +208,9 @@ export const ActiveTrades: React.FC<{ trackedWallet?: string | null }> = ({ trac
                   <div className="text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <span className={`font-semibold ${
-                        trade.profit > 0 ? 'text-green-400' : 'text-red-400'
+                        trade.profit !== undefined && trade.profit > 0 ? 'text-green-400' : 'text-red-400'
                       }`}>
-                        {trade.profit > 0 ? '+' : ''}{trade.profit.toFixed(4)} SOL
+                        {trade.profit !== undefined && trade.profit > 0 ? '+' : ''}{trade.profit?.toFixed(4)} SOL
                       </span>
                       <span className={`text-sm ${
                         trade.profit_percentage > 0 ? 'text-green-400' : 'text-red-400'
@@ -222,7 +223,7 @@ export const ActiveTrades: React.FC<{ trackedWallet?: string | null }> = ({ trac
                     </div>
                     <div className="text-sm text-gray-400">
                       Amount: {trade.token_amount.toFixed(8)}
-                      {trade.initial_token_amount && trade.initial_token_amount > trade.token_amount && (
+                      {trade.initial_token_amount !== undefined && trade.initial_token_amount > trade.token_amount && (
                         <span className="ml-1 text-blue-400">
                           (Initial: {trade.initial_token_amount.toFixed(8)})
                         </span>
@@ -239,7 +240,7 @@ export const ActiveTrades: React.FC<{ trackedWallet?: string | null }> = ({ trac
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedTrade(trade);
+                      setSelectedTrade(trade as Trade);
                     }}
                     className="px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg text-sm hover:bg-blue-500/20 transition-colors"
                   >

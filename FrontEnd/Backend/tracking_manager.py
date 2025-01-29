@@ -167,62 +167,76 @@ class TrackingManager:
     ) -> Dict:
         """Add a new tracked trade"""
         try:
-            print("\n=== Adding New Trade ===")
-            print(f"Token: {token_address}")
-            print(f"Type: {trade_type}")
-            print(f"Amount: {amount_in_sol} SOL")
-            print(f"Token amount: {token_amount}")
-            print(f"Wallet: {wallet_group}")
+            print(f"\n{Fore.CYAN}{'='*50}")
+            print(f"{Fore.CYAN}Adding New Trade - Detailed Logging{Style.RESET_ALL}")
+            print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+            
+            # Log initial trade parameters
+            print(f"\n{Fore.WHITE}📝 Trade Parameters:{Style.RESET_ALL}")
+            print(f"Token: {Fore.YELLOW}{token_address}{Style.RESET_ALL}")
+            print(f"Type: {Fore.GREEN if trade_type == 'buy' else Fore.RED}{trade_type}{Style.RESET_ALL}")
+            print(f"Amount: {Fore.CYAN}{amount_in_sol} SOL{Style.RESET_ALL}")
+            print(f"Token amount: {Fore.CYAN}{token_amount}{Style.RESET_ALL}")
+            print(f"Wallet: {Fore.YELLOW}{wallet_group}{Style.RESET_ALL}")
             
             trade_id = self._get_next_trade_id()
-            print(f"\nGenerated trade ID: {trade_id}")
+            print(f"\n{Fore.GREEN}✓ Generated trade ID: {trade_id}{Style.RESET_ALL}")
             
-            # Get current SOL price
+            # Get current SOL price with enhanced logging
             sol_price = 100.0  # Default fallback price
             try:
                 import aiohttp
                 import asyncio
                 
                 async def get_current_sol_price():
+                    print(f"\n{Fore.WHITE}📊 Fetching current SOL price...{Style.RESET_ALL}")
                     async with aiohttp.ClientSession() as session:
                         url = "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
                         async with session.get(url) as response:
                             if response.status == 200:
                                 data = await response.json()
-                                return float(data['solana']['usd'])
+                                price = float(data['solana']['usd'])
+                                print(f"{Fore.GREEN}✓ SOL price fetched: ${price}{Style.RESET_ALL}")
+                                return price
+                    print(f"{Fore.YELLOW}⚠️ Using fallback SOL price: $100{Style.RESET_ALL}")
                     return 100.0  # Fallback price
                 
                 # Run the async function to get SOL price
                 sol_price = asyncio.run(get_current_sol_price())
             except Exception as e:
                 self.logger.warning(f"Failed to get SOL price, using fallback: {e}")
+                print(f"{Fore.YELLOW}⚠️ Using fallback SOL price due to error: {e}{Style.RESET_ALL}")
             
-            # Calculate USD values
+            # Calculate USD values with logging
             buy_price_usd = buy_price * sol_price
             amount_in_usd = amount_in_sol * sol_price
+            
+            print(f"\n{Fore.WHITE}💰 USD Calculations:{Style.RESET_ALL}")
+            print(f"Buy price (USD): ${buy_price_usd:.4f}")
+            print(f"Total amount (USD): ${amount_in_usd:.2f}")
             
             trade = {
                 "id": trade_id,
                 "date_time": time.strftime('%Y-%m-%dT%H:%M:%S.%f'),
                 "token_address": token_address,
                 "buy_price": buy_price,
-                "buy_price_usd": buy_price_usd,  # New field
+                "buy_price_usd": buy_price_usd,
                 "close_price": None,
                 "current_price": buy_price,
-                "current_price_usd": buy_price_usd,  # New field
+                "current_price_usd": buy_price_usd,
                 "profit": 0.0,
                 "profit_percentage": 0.0,
                 "status": "active",
                 "result": result,
                 "transaction_link": transaction_link,
                 "amount_in_sol": amount_in_sol,
-                "amount_in_usd": amount_in_usd,  # New field
+                "amount_in_usd": amount_in_usd,
                 "token_amount": token_amount,
                 "wallet_group": wallet_group,
                 "trade_type": trade_type,
             }
             
-            print("\nTrade data to save:")
+            print(f"\n{Fore.WHITE}📋 Trade Data to Save:{Style.RESET_ALL}")
             print(json.dumps(trade, indent=2))
             
             # Add to our in-memory trades
@@ -232,24 +246,33 @@ class TrackingManager:
             key = (wallet_group, token_address)
             self.open_trades[key].append(trade)
             
-            print("\nSaving to file...")
+            print(f"\n{Fore.CYAN}💾 Saving to files...{Style.RESET_ALL}")
             # Save to file
             self._save_tracked_trades()
             
             # Verify the save
-            print("\nVerifying save...")
+            print(f"\n{Fore.WHITE}🔍 Verifying save...{Style.RESET_ALL}")
             saved_trades = self._load_tracked_trades()
             if trade_id in saved_trades:
-                print(f"✓ Successfully saved trade {trade_id}")
-                print(f"Total trades in file: {len(saved_trades)}")
-                print(f"Latest trade IDs: {sorted(list(saved_trades.keys()))[-5:]}")
+                print(f"{Fore.GREEN}✓ Successfully saved trade {trade_id}{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}Total trades in file: {len(saved_trades)}{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}Latest trade IDs: {sorted(list(saved_trades.keys()))[-5:]}{Style.RESET_ALL}")
+                
+                # Verify trade data integrity
+                saved_trade = saved_trades[trade_id]
+                all_fields_match = all(saved_trade[k] == v for k, v in trade.items())
+                if all_fields_match:
+                    print(f"{Fore.GREEN}✓ Trade data integrity verified{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.RED}❌ Trade data mismatch detected!{Style.RESET_ALL}")
             else:
-                print(f"❌ Failed to save trade {trade_id}!")
+                print(f"{Fore.RED}❌ Failed to save trade {trade_id}!{Style.RESET_ALL}")
             
+            print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
             return trade
             
         except Exception as e:
-            print(f"\n❌ Error adding trade:")
+            print(f"\n{Fore.RED}❌ Error adding trade:")
             print(str(e))
             import traceback
             traceback.print_exc()
@@ -345,11 +368,26 @@ class TrackingManager:
         return None
 
     def close_tracked_trade(self, wallet: str, token: str, sell_amount: float, sell_price: float):
-        """Close trades using FIFO matching"""
+        """Close trades using FIFO matching with enhanced logging"""
+        print(f"\n{Fore.CYAN}{'='*50}")
+        print(f"{Fore.CYAN}Closing Trade - Detailed Logging{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        
+        print(f"\n{Fore.WHITE}📝 Close Parameters:{Style.RESET_ALL}")
+        print(f"Wallet: {Fore.YELLOW}{wallet}{Style.RESET_ALL}")
+        print(f"Token: {Fore.YELLOW}{token}{Style.RESET_ALL}")
+        print(f"Sell amount: {Fore.CYAN}{sell_amount}{Style.RESET_ALL}")
+        print(f"Sell price: {Fore.CYAN}{sell_price} SOL{Style.RESET_ALL}")
+        
         key = (wallet, token)
         matched_trades, remaining = self._match_trades_fifo(wallet, token, sell_amount)
         
+        if remaining > 0:
+            print(f"\n{Fore.YELLOW}⚠️ Warning: {remaining} tokens couldn't be matched to open trades{Style.RESET_ALL}")
+        
         total_profit = 0
+        print(f"\n{Fore.WHITE}📊 Processing Matched Trades:{Style.RESET_ALL}")
+        
         for match in matched_trades:
             buy_trade = match['buy_trade']
             sold_amount = match['sold_amount']
@@ -358,6 +396,11 @@ class TrackingManager:
             
             # Calculate profit for this match
             profit_percentage = ((sell_price / buy_trade['buy_price']) - 1) * 100
+            
+            print(f"\n{Fore.WHITE}Trade {buy_trade['id']}:{Style.RESET_ALL}")
+            print(f"Sold amount: {Fore.CYAN}{sold_amount}{Style.RESET_ALL}")
+            print(f"Profit: {Fore.GREEN if profit >= 0 else Fore.RED}{profit:.4f} SOL{Style.RESET_ALL}")
+            print(f"Profit %: {Fore.GREEN if profit_percentage >= 0 else Fore.RED}{profit_percentage:.2f}%{Style.RESET_ALL}")
             
             # Create closed trade record
             closed_trade = {
@@ -371,6 +414,7 @@ class TrackingManager:
             }
             
             if sold_amount < buy_trade['token_amount']:
+                print(f"\n{Fore.YELLOW}⚠️ Partial sale detected{Style.RESET_ALL}")
                 # Add partial sale record
                 if 'partial_sales' not in buy_trade:
                     buy_trade['partial_sales'] = []
@@ -380,25 +424,28 @@ class TrackingManager:
                     'date_time': datetime.now().isoformat()
                 })
                 self.update_tracked_trade(buy_trade['id'], buy_trade)
+                print(f"{Fore.GREEN}✓ Partial sale recorded{Style.RESET_ALL}")
             
             self.closed_trades[key].append(closed_trade)
             
-            # Need to update the original trade in main trades dict
+            # Update the original trade in main trades dict
             self.trades[buy_trade['id']].update({
                 "status": "closed" if sold_amount == buy_trade['token_amount'] else "partial",
                 "close_price": sell_price,
                 "closed_at": datetime.now().isoformat()
             })
+            print(f"{Fore.GREEN}✓ Trade {buy_trade['id']} status updated{Style.RESET_ALL}")
         
+        print(f"\n{Fore.WHITE}💾 Saving trade data...{Style.RESET_ALL}")
         self._save_closed_trades()
         self._save_tracked_trades()
         
         if matched_trades:
-            self.logger.info(
-                f"{Fore.GREEN}💰 TOTAL PROFIT: {total_profit:.4f} SOL "
-                f"({total_profit * 100:.2f} USD @ $100/SOL){Style.RESET_ALL}"
-            )
+            print(f"\n{Fore.GREEN}💰 TOTAL PROFIT: {total_profit:.4f} SOL{Style.RESET_ALL}")
+            sol_price = 100  # You can replace this with actual SOL price if available
+            print(f"{Fore.GREEN}💵 Approximate USD value: ${total_profit * sol_price:.2f}{Style.RESET_ALL}")
         
+        print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
         return matched_trades
 
     def get_trades(self):
